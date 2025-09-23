@@ -292,17 +292,17 @@ public:
             if (it_pos == size_) {
                 // Итератор указывает на end(), ничего перемещать не надо, достаточно 1 раз вызвать конструктор
                 std::construct_at(end(), std::forward<Args>(args)...);
-            } else {
-                // Нужны перемещения/копирования и 1 присваивание
+            } else { // Нужны перемещения/копирования и 1 присваивание
+                T new_value(std::forward<Args>(args)...);
                 if constexpr (std::is_nothrow_move_constructible_v<T> || !std::is_copy_constructible_v<T>) {
                     // Инициализируется еще не проинициализированынй end(), чтобы все остальное перемещать присваиванием
                     std::construct_at(end(), std::move(Back()));
                     std::move_backward(non_const_it, std::prev(end()), end());
-                    *non_const_it = T(std::forward<Args>(args)...);
+                    *non_const_it = std::move(new_value);
                 } else {
                     std::construct_at(end(), Back());
                     std::copy_backward(non_const_it, std::prev(end()), end());
-                    *non_const_it = T(std::forward<Args>(args)...);
+                    *non_const_it = std::move(new_value);
                 }
             }
         }
@@ -312,12 +312,6 @@ public:
     }
 
     iterator Insert(const_iterator it, const T& val) {
-        // Если val из вектора, создаем копию, чтобы случайно не потерять объект
-        if (begin() <= &val && &val < end()) {
-            return Emplace(it, T(val));
-        }
-
-        // Иначе можно не бояться инвалидации ссылки при перемещении объектов и реаллокации
         return Emplace(it, val);
     }
 

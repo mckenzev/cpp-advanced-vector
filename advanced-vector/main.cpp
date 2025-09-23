@@ -629,6 +629,7 @@ void Benchmark() {
             cerr << "std::vector:"sv << endl;
             C::Reset();
             vector<C> v(NUM);
+            v.insert(v.begin(), v.back());
             Dump();
             v.push_back(c);
         }
@@ -642,6 +643,7 @@ void Benchmark() {
             cerr << "Vector:"sv << endl;
             C::Reset();
             Vector<C> v(NUM);
+            v.Insert(v.begin(), v.Back());
             Dump();
             v.PushBack(c);
         }
@@ -663,4 +665,27 @@ int main() {
         std::cerr << e.what() << std::endl;
     }
     std::cout << "stoped on " << __LINE__ << " line" << std::endl;
+
+    constexpr size_t NUM = 3;
+    std::vector<int> v(NUM);
+    for (size_t i = 0; i < v.size(); ++i) {
+        v[i] = i + 1;
+    }
+
+    v.insert(v.begin(), v.back());
+    for (int a : v) {
+        std::cout << a << ' ';
+    }
+    std::cout << std::endl;
+
+    Vector<int> V(NUM);
+    for (size_t i = 0; i < V.Size(); ++i) {
+        V[i] = i + 1;
+    }
+
+    V.Insert(V.begin(), V.Back());
+    for (int a : V) {
+        std::cout << a << ' ';
+    }
+    std::cout << std::endl;
 }
