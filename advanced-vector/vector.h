@@ -59,11 +59,11 @@ public:
         return buffer_[index];
     }
 
-    operator T*() {
+    operator T*() noexcept {
         return buffer_;
     }
 
-    operator const T*() const {
+    operator const T*() const noexcept {
         return buffer_;
     }
 
@@ -251,20 +251,7 @@ public:
 
     template <typename... Args>
     T& EmplaceBack(Args&&... args) {
-        if (size_ == Capacity()) {
-            RawMemory<T> new_data(size_ == 0 ? 1 : size_ * 2);
-            std::construct_at(new_data + size_, std::forward<Args>(args)...);
-
-            OverwriteData(begin(), end(), new_data);
-
-            std::destroy(begin(), end());
-            data_.Swap(new_data);
-        } else {
-            std::construct_at(end(), std::forward<Args>(args)...);
-        }
-        ++size_;
-        
-        return Back();
+        return *Emplace(end(), std::forward<Args>(args)...);
     }
 
     void PushBack(const T& value) {
@@ -276,9 +263,7 @@ public:
     }
 
     void PopBack() {
-        if (size_ == 0) {
-            return;
-        }
+        assert(size_ != 0);
 
         std::destroy_at(&Back());
         --size_;
@@ -286,9 +271,7 @@ public:
 
     template <typename... Args>
     iterator Emplace(const_iterator it, Args&& ... args) {
-        if (it < begin() || it > end()) {
-            throw std::out_of_range("Out of range it in Emplace(const_iterator it, Args&& ... args)");
-        }
+        assert(begin() <= it && it <= end());
         // Метод должен принимать константные и неконстантные итераторы, но для работы метода итератор должен быть неконстантным
         iterator non_const_it = const_cast<iterator>(it);
         // Позиция, в которой будет произведена вставка
@@ -329,12 +312,12 @@ public:
     }
 
     iterator Insert(const_iterator it, const T& val) {
-        // Если val из вектора, создаем копию, чтобы случайно не потерять обьект
+        // Если val из вектора, создаем копию, чтобы случайно не потерять объект
         if (begin() <= &val && &val < end()) {
             return Emplace(it, T(val));
         }
 
-        // Иначе можно не бояться инвалидации ссылки при перемещениях объектов и реаллокации
+        // Иначе можно не бояться инвалидации ссылки при перемещении объектов и реаллокации
         return Emplace(it, val);
     }
 
@@ -343,10 +326,8 @@ public:
     }
 
     iterator Erase(const_iterator it) {
-        if (it < begin() || it >= end()) {
-            throw std::out_of_range("Out of range it in Emplace(ConstIterator it, Args&& ... args)");
-        }
-        
+        assert(begin() <= it && it < end());
+ 
         iterator non_const_it = const_cast<iterator>(it);
 
         if constexpr (std::is_nothrow_move_constructible_v<T> || !std::is_copy_constructible_v<T>) {
