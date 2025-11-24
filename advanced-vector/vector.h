@@ -294,16 +294,15 @@ public:
                 std::construct_at(end(), std::forward<Args>(args)...);
             } else { // Нужны перемещения/копирования и 1 присваивание
                 T new_value(std::forward<Args>(args)...);
+
                 if constexpr (std::is_nothrow_move_constructible_v<T> || !std::is_copy_constructible_v<T>) {
-                    // Инициализируется еще не проинициализированынй end(), чтобы все остальное перемещать присваиванием
                     std::construct_at(end(), std::move(Back()));
-                    std::move_backward(non_const_it, std::prev(end()), end());
-                    *non_const_it = std::move(new_value);
                 } else {
                     std::construct_at(end(), Back());
-                    std::copy_backward(non_const_it, std::prev(end()), end());
-                    *non_const_it = std::move(new_value);
                 }
+
+                std::move_backward(non_const_it, std::prev(end()), end());
+                *non_const_it = std::move(new_value);
             }
         }
         ++size_;

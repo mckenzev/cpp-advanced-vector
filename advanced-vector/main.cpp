@@ -10,13 +10,13 @@ namespace {
 // "Магическое" число, используемое для отслеживания живости объекта
 inline const uint32_t DEFAULT_COOKIE = 0xdeadbeef;
 
-struct TestObj {
-    TestObj() = default;
-    TestObj(const TestObj& other) = default;
-    TestObj& operator=(const TestObj& other) = default;
-    TestObj(TestObj&& other) = default;
-    TestObj& operator=(TestObj&& other) = default;
-    ~TestObj() {
+struct A {
+    A() = default;
+    A(const A& other) = default;
+    A& operator=(const A& other) = default;
+    A(A&& other) = default;
+    A& operator=(A&& other) = default;
+    ~A() {
         cookie = 0;
     }
     [[nodiscard]] bool IsAlive() const noexcept {
@@ -352,7 +352,7 @@ void Test4() {
     }
 
     {
-        Vector<TestObj> v(1);
+        Vector<A> v(1);
         assert(v.Size() == v.Capacity());
         // Операция PushBack существующего элемента вектора должна быть безопасна
         // даже при реаллокации памяти
@@ -361,7 +361,7 @@ void Test4() {
         assert(v[1].IsAlive());
     }
     {
-        Vector<TestObj> v(1);
+        Vector<A> v(1);
         assert(v.Size() == v.Capacity());
         // Операция PushBack для перемещения существующего элемента вектора должна быть безопасна
         // даже при реаллокации памяти
@@ -388,7 +388,7 @@ void Test5() {
     }
     assert(Obj::GetAliveObjectCount() == 0);
     {
-        Vector<TestObj> v(1);
+        Vector<A> v(1);
         assert(v.Size() == v.Capacity());
         // Операция EmplaceBack существующего элемента вектора должна быть безопасна
         // даже при реаллокации памяти
@@ -446,18 +446,8 @@ void Test6() {
     {
         Obj::ResetCounters();
         Vector<Obj> v;
-        v.Reserve(SIZE); // 10 size
+        v.Reserve(SIZE);
         auto* pos = v.Emplace(v.end(), Obj{1});
-
-        std::cout << "v.Size() = " << v.Size() << " and must be " << 1 << std::endl;
-        std::cout << "v.Capacity() = " << v.Capacity() << " and must be >= them " << v.Size() << std::endl;
-        std::cout << "&*pos = " << &*pos << " and must be " << &v[0] << std::endl;
-        std::cout << "Obj::num_moved = " << Obj::num_moved << " and must be " << 1 << std::endl;
-        std::cout << "Obj::num_constructed_with_id = " << Obj::num_constructed_with_id << " and must be " << 1 << std::endl;
-        std::cout << "Obj::num_copied = " << Obj::num_copied << " and must be " << 0 << std::endl;
-        std::cout << "Obj::num_assigned = " << Obj::num_assigned << " and must be " << 0 << std::endl;
-        std::cout << "Obj::num_move_assigned = " << Obj::num_move_assigned << " and must be " << 0 << std::endl;
-        std::cout << "Obj::GetAliveObjectCount() = " << Obj::GetAliveObjectCount() << " and must be " << 1 << std::endl;
 
         assert(v.Size() == 1);
         assert(v.Capacity() >= v.Size());
@@ -482,23 +472,23 @@ void Test6() {
         assert(Obj::GetAliveObjectCount() == SIZE + 1);
     }
     {
-        Vector<TestObj> v{SIZE};
+        Vector<A> v{SIZE};
         v.Insert(v.cbegin() + 2, v[0]);
-        assert(std::all_of(v.begin(), v.end(), [](const TestObj& obj) {
+        assert(std::all_of(v.begin(), v.end(), [](const A& obj) {
             return obj.IsAlive();
         }));
     }
     {
-        Vector<TestObj> v{SIZE};
+        Vector<A> v{SIZE};
         v.Insert(v.cbegin() + 2, std::move(v[0]));
-        assert(std::all_of(v.begin(), v.end(), [](const TestObj& obj) {
+        assert(std::all_of(v.begin(), v.end(), [](const A& obj) {
             return obj.IsAlive();
         }));
     }
     {
-        Vector<TestObj> v{SIZE};
+        Vector<A> v{SIZE};
         v.Emplace(v.cbegin() + 2, std::move(v[0]));
-        assert(std::all_of(v.begin(), v.end(), [](const TestObj& obj) {
+        assert(std::all_of(v.begin(), v.end(), [](const A& obj) {
             return obj.IsAlive();
         }));
     }
@@ -652,6 +642,7 @@ void Benchmark() {
     }
 }
 
+
 int main() {
     try {
         Test1();
@@ -664,28 +655,4 @@ int main() {
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
     }
-    std::cout << "stoped on " << __LINE__ << " line" << std::endl;
-
-    constexpr size_t NUM = 3;
-    std::vector<int> v(NUM);
-    for (size_t i = 0; i < v.size(); ++i) {
-        v[i] = i + 1;
-    }
-
-    v.insert(v.begin(), v.back());
-    for (int a : v) {
-        std::cout << a << ' ';
-    }
-    std::cout << std::endl;
-
-    Vector<int> V(NUM);
-    for (size_t i = 0; i < V.Size(); ++i) {
-        V[i] = i + 1;
-    }
-
-    V.Insert(V.begin(), V.Back());
-    for (int a : V) {
-        std::cout << a << ' ';
-    }
-    std::cout << std::endl;
 }
